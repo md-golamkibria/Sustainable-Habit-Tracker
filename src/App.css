@@ -36,3 +36,88 @@
     transform: rotate(360deg);
   }
 }
+
+/* Navbar Layout Fixes */
+nav {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  width: 100% !important;
+}
+
+/* Force logout button visibility */
+.logout-btn {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 1000 !important;
+  pointer-events: auto !important;
+  flex-shrink: 0 !important;
+}
+
+#desktop-logout-btn {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure navbar has proper layout */
+.navbar-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  height: 64px !important;
+  padding: 0 16px !important;
+}
+
+.navbar-left {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+.navbar-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 !important;
+  max-width: 1024px !important;
+  margin: 0 16px !important;
+}
+
+.navbar-right {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  gap: 12px !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .navbar-center {
+    display: none !important;
+  }
+  
+  .navbar-right {
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar-right .logout-btn {
+    display: none !important;
+  }
+}
+
+/* Force visibility on larger screens */
+@media (min-width: 641px) {
+  .navbar-right .logout-btn {
+    display: flex !important;
+  }
+}
