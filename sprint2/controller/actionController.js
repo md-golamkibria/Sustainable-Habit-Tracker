@@ -1,7 +1,7 @@
 const express = require('express');
 const Action = require('../model/Action');
 const User = require('../model/User');
-const { calculateCO2Savings, calculateWaterSavings } = require('../../shared/utils/helpers');
+const { calculateCO2Savings, calculateWaterSavings } = require('../shared/utils/helpers');
 
 const router = express.Router();
 

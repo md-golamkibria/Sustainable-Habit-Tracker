@@ -11,15 +11,18 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
-// Get user profile
+// Get logged-in user's profile
 router.get('/profile', requireAuth, async (req, res) => {
   try {
-    const user = await User.findOne({ userId: req.session.userId });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    
+    const userId = req.session.userId;
+    const user = await User.findOne({ userId }).select('-_id userId username');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error('Get profile error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

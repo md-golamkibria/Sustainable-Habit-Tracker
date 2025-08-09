@@ -1,6 +1,6 @@
 const express = require('express');
 const User = require('../model/User');
-const { generateUserId } = require('../../shared/utils/helpers');
+const { generateUserId } = require('../shared/utils/helpers');
 
 const router = express.Router();
 

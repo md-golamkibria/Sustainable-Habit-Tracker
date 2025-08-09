@@ -20,7 +20,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-const Challenges = ({ user }) => {
+const Challenges = () => {
   const [challenges, setChallenges] = useState([]);
   const [message, setMessage] = useState('');
   const [userChallenges, setUserChallenges] = useState([]);
@@ -167,21 +167,7 @@ const Challenges = ({ user }) => {
     setSelectedTemplate(null);
   };
 
-  const useTemplate = (template) => {
-    setFormData({
-      title: template.title,
-      description: template.description,
-      type: template.type,
-      category: template.category,
-      target: template.target,
-      difficulty: template.difficulty,
-      reward: { points: getDifficultyPoints(template.difficulty, template.type) },
-      isPublic: false,
-      duration: { endDate: getDefaultEndDate(template.type) }
-    });
-    setSelectedTemplate(template.id);
-  };
-
+  // removed bad diff line and added correct helper
   const getDifficultyPoints = (difficulty, type) => {
     const basePoints = { easy: 25, medium: 50, hard: 100, extreme: 200 };
     const typeMultiplier = { daily: 1, weekly: 2, monthly: 4, milestone: 3 };
@@ -193,6 +179,22 @@ const Challenges = ({ user }) => {
     const daysToAdd = { daily: 1, weekly: 7, monthly: 30, milestone: 14 };
     now.setDate(now.getDate() + (daysToAdd[type] || 7));
     return now.toISOString().split('T')[0];
+  };
+
+  // NEW FUNCTION
+  const applyTemplate = (template) => {
+    setSelectedTemplate(template.id);
+    setFormData({
+      title: template.title,
+      description: template.description,
+      type: template.type,
+      category: template.category || 'general',
+      target: template.target || { value: 1, unit: 'actions' },
+      difficulty: template.difficulty || 'medium',
+      reward: { points: getDifficultyPoints(template.difficulty || 'medium', template.type) },
+      isPublic: template.isPublic ?? false,
+      duration: { endDate: getDefaultEndDate(template.type) }
+    });
   };
 
   const createChallenge = async (e) => {
@@ -298,7 +300,7 @@ const Challenges = ({ user }) => {
                       ? 'border-green-500 bg-green-50'
                       : 'border-gray-200 hover:border-green-300'
                   }`}
-                  onClick={() => useTemplate(template)}
+                  onClick={() => applyTemplate(template)}
                 >
                   <h4 className="font-medium text-sm text-gray-900">{template.title}</h4>
                   <p className="text-xs text-gray-600 mt-1">{template.description}</p>

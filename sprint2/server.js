@@ -3,7 +3,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const cors = require('cors');
 const cron = require('node-cron');
-const connectDB = require('../shared/database/connection');
+const connectDB = require('./shared/database/connection');
 
 require('dotenv').config();
 
@@ -72,7 +72,7 @@ cron.schedule('0 0 * * 0', async () => {
   }
 });
 
-const PORT = process.env.PORT || 5002;
+const PORT = 5002;
 
 app.listen(PORT, () => {
   console.log(`🚀 Sprint 2 Server running on port ${PORT}`);
