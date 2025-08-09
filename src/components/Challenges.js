@@ -20,7 +20,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-const Challenges = () => {
+const Challenges = ({ user }) => {
   const [challenges, setChallenges] = useState([]);
   const [message, setMessage] = useState('');
   const [userChallenges, setUserChallenges] = useState([]);

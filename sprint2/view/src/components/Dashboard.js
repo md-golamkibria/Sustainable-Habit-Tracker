@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navigation from './Navigation';
 import { Calendar, Target, TrendingUp, Leaf } from 'lucide-react';
+import axios from 'axios';
 
 const Dashboard = ({ user, onLogout }) => {
   const [stats, setStats] = useState({
@@ -13,22 +14,28 @@ const Dashboard = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchDashboardData = React.useCallback(async () => {
+    setLoading(true);
     try {
-      // This would be implemented in later sprints with actual API calls
-      // For now, we'll use user data from the profile
+      const res = await axios.get('/analytics/dashboard');
+      const analytics = res.data;
       setStats({
-        todayActions: 0,
-        weeklyActions: 0,
-        totalActions: user?.stats?.totalActions || 0,
-        currentStreak: user?.stats?.currentStreak || 0
+        todayActions: analytics.overview.today.totalActions,
+        weeklyActions: analytics.overview.week.totalActions,
+        totalActions: analytics.overview.allTime.totalActions,
+        currentStreak: analytics.achievements.currentStreak
       });
-      setRecentActions([]);
+      // Get the most recent actions from dailyActivity (last 3 days with actions)
+      const recent = analytics.trends.dailyActivity
+        .filter(day => day.actions > 0)
+        .slice(-3)
+        .reverse();
+      setRecentActions(recent);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     fetchDashboardData();

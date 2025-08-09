@@ -17,7 +17,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer
 } from 'recharts';
 
@@ -131,7 +131,7 @@ const Analytics = ({ user }) => {
               <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
             ))}
           </Pie>
-          <Tooltip />
+          <RechartsTooltip />
         </PieChart>
       </ResponsiveContainer>
     );
@@ -214,7 +214,7 @@ const Analytics = ({ user }) => {
                     tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   />
                   <YAxis />
-                  <Tooltip 
+                  <RechartsTooltip 
                     labelFormatter={(date) => new Date(date).toLocaleDateString()}
                   />
                   <Area 

@@ -104,10 +104,6 @@ function App() {
               element={user ? <Goals user={user} /> : <Navigate to="/login" />} 
             />
             <Route 
-              path="/social-sharing" 
-              element={user ? <SocialSharing user={user} /> : <Navigate to="/login" />} 
-            />
-            <Route 
               path="/education" 
               element={user ? <EducationalContent user={user} /> : <Navigate to="/login" />} 
             />
@@ -118,6 +114,10 @@ function App() {
             <Route 
               path="/events" 
               element={user ? <Events user={user} /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/social-sharing" 
+              element={user ? <SocialSharing user={user} /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/" 

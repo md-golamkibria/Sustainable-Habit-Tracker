@@ -65,7 +65,7 @@ const Goals = ({ user }) => {
         title: formData.title,
         description: formData.description,
         type: 'custom', // Default to custom type
-        category: 'actions', // Map to backend categories
+        category: formData.category || 'actions', // Use selected category or default to actions
         target: {
           value: parseInt(formData.targetValue),
           unit: formData.unit
@@ -79,7 +79,7 @@ const Goals = ({ user }) => {
         await axios.put(`/api/goals/${editingGoal._id}`, goalData);
         setMessage('Goal updated successfully!');
       } else {
-        await axios.post('/api/goals/', goalData);
+        await axios.post('/api/goals', goalData);
         setMessage('Goal created successfully!');
       }
       

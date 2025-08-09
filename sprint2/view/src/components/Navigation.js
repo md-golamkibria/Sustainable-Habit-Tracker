@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, User, Plus, LogOut, Leaf } from 'lucide-react';
+import { Home, User, Plus, LogOut, Leaf, Target, BarChart3, Trophy, BookOpen } from 'lucide-react';
 
 const Navigation = ({ user, onLogout }) => {
   const location = useLocation();
@@ -31,6 +31,54 @@ const Navigation = ({ user, onLogout }) => {
             >
               <Home className="h-4 w-4 mr-2" />
               Dashboard
+            </Link>
+
+            <Link
+              to="/goals"
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                isActive('/goals')
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Target className="h-4 w-4 mr-2" />
+              Goals
+            </Link>
+
+            <Link
+              to="/analytics"
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                isActive('/analytics')
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
+            </Link>
+
+            <Link
+              to="/challenges"
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                isActive('/challenges')
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Trophy className="h-4 w-4 mr-2" />
+              Challenges
+            </Link>
+
+            <Link
+              to="/education"
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                isActive('/education')
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              Education
             </Link>
 
             <Link

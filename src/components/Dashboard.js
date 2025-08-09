@@ -28,78 +28,35 @@ const Dashboard = ({ user }) => {
   const fetchDashboardData = useCallback(async () => {
     try {
       // Fetch real user data from APIs
-      const [actionsRes, challengesRes, goalsRes] = await Promise.all([
-        axios.get('/api/actions/list?limit=5'),
+      const [analyticsRes, challengesRes, goalsRes] = await Promise.all([
+        axios.get('/api/analytics/dashboard'),
         axios.get('/api/challenges/my-challenges'),
         axios.get('/api/goals/')
       ]);
 
-      // Calculate stats from actual data
-      const actions = actionsRes.data.actions || [];
-      const userChallenges = challengesRes.data || { active: [], completed: [] };
-      const goals = Array.isArray(goalsRes.data) ? goalsRes.data : [];
+      // Extract stats from analytics response
+      const overview = analyticsRes.data.overview || {};
+      const achievements = analyticsRes.data.achievements || {};
+      const trends = analyticsRes.data.trends || {};
 
-      console.log('Dashboard data fetched:', {
-        actions: actions.length,
-        goals: goals.length,
-        challenges: userChallenges
-      });
-
-      // Calculate week start
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - 7);
-
-      const weeklyActions = actions.filter(action => 
-        new Date(action.date || action.createdAt) >= weekStart
-      );
-
-      const completedChallenges = userChallenges.completed ? userChallenges.completed.length : 0;
-      const activeChallengesData = userChallenges.active || [];
-
-      // Filter active goals - goals can have different status values
-      const activeGoals = goals.filter(goal => 
-        goal.status === 'active' || (!goal.status && !goal.completedDate)
-      ).length;
-      
-      console.log('Active goals found:', activeGoals, 'Total goals:', goals.length);
-      
-      // Get active goals with progress data
-      const activeGoalsWithProgress = goals.filter(goal => 
-        goal.status === 'active' || (!goal.status && !goal.completedDate)
-      ).map(goal => ({
-        id: goal._id,
-        title: goal.title,
-        description: goal.description,
-        category: goal.category,
-        target: goal.target,
-        progress: goal.progress || { current: 0, percentage: 0 },
-        timeframe: goal.timeframe,
-        priority: goal.priority || 'medium'
-      }));
-      
-      setActiveGoalsData(activeGoalsWithProgress);
-
-      const totalCO2Saved = actions.reduce((sum, action) => 
-        sum + (action.impact?.co2Saved || action.co2Saved || 0), 0
-      );
-
+      // Calculate stats from backend analytics
       setStats({
-        totalActions: actions.length,
-        weeklyActions: weeklyActions.length,
+        totalActions: overview.allTime?.totalActions || achievements.totalActions || 0,
+        weeklyActions: overview.week?.totalActions || 0,
         completedChallenges,
         activeGoals,
-        co2Saved: Math.round(totalCO2Saved * 100) / 100, // Round to 2 decimal places
+        co2Saved: overview.allTime?.totalCO2Saved || 0,
         energySaved: 0 // Will be calculated when we have energy data
       });
-      
-      // Format recent actions for display
-      const formattedActions = actions.slice(0, 3).map(action => ({
-        id: action._id,
-        action: `${(action.actionType || 'Action').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${action.description || 'No description'}`,
-        date: new Date(action.date || action.createdAt).toLocaleDateString(),
-        impact: action.impact?.co2Saved || action.co2Saved || 0
+
+      // Format recent actions for display (latest 3 from all actions)
+      const allActions = trends.dailyActivity?.flatMap(day => Array(day.actions).fill(day)).slice(-3) || [];
+      const formattedActions = allActions.map((action, idx) => ({
+        id: idx,
+        action: `Actions: ${action.actions}`,
+        date: action.date,
+        impact: action.co2Saved
       }));
-      
       setRecentActions(formattedActions);
       setActiveChallenges(activeChallengesData.map(challenge => ({
         id: challenge._id,

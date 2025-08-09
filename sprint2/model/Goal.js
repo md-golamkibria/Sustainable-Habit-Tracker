@@ -4,6 +4,7 @@ const goalSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: true,
+    ref: 'User',
     index: true
   },
   title: {
@@ -22,7 +23,7 @@ const goalSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['actions', 'co2_reduction', 'water_saving', 'streak', 'specific_action'],
+    enum: ['actions', 'co2_reduction', 'water_saving', 'streak', 'specific_action', 'general', 'transport', 'transportation'],
     required: true
   },
   target: {
@@ -161,4 +162,4 @@ goalSchema.methods.updateMilestones = function() {
   });
 };
 
-module.exports = mongoose.model('Goal', goalSchema);
+module.exports = mongoose.models.Goal || mongoose.model('Goal', goalSchema);

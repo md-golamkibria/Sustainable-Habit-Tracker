@@ -40,6 +40,8 @@ app.use('/actions', require('./controller/actionController'));
 app.use('/analytics', require('./controller/analyticsController'));
 app.use('/challenges', require('./controller/challengeController'));
 app.use('/goals', require('./controller/goalController'));
+const educationalController = require('./controller/educationalController');
+app.use('/educational', educationalController());
 
 // Scheduled tasks
 // Reset daily challenges at midnight

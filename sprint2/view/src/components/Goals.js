@@ -64,7 +64,7 @@ const Goals = ({ user }) => {
         title: formData.title,
         description: formData.description,
         type: 'custom',
-        category: 'actions',
+        category: formData.category || 'actions',
         target: {
           value: parseInt(formData.targetValue),
           unit: formData.unit
@@ -78,7 +78,7 @@ const Goals = ({ user }) => {
         await axios.put(`/goals/${editingGoal._id}`, goalData);
         setMessage('Goal updated successfully!');
       } else {
-        await axios.post('/goals/', goalData);
+        await axios.post('/goals', goalData);
         setMessage('Goal created successfully!');
       }
       

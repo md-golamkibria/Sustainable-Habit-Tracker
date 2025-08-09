@@ -42,9 +42,7 @@ const Navbar = ({ user, onLogout }) => {
 
         {/* Center - Navigation Links (hidden on mobile) */}
         <div className="navbar-center hidden md:flex">
-          {navigation.filter(item => 
-            ['Dashboard', 'Actions', 'Analytics', 'Challenges', 'Goals', 'Share'].includes(item.name)
-          ).map((item) => {
+          {navigation.map((item) => {
             const Icon = item.icon;
             return (
               <Link

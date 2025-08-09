@@ -5,6 +5,10 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
 import LogAction from './components/LogAction';
+import Goals from './components/Goals';
+import Analytics from './components/Analytics';
+import Challenges from './components/Challenges';
+import Education from './components/Education';
 import axios from 'axios';
 
 // Configure axios for credentials
@@ -69,6 +73,22 @@ function App() {
           <Route 
             path="/log-action" 
             element={user ? <LogAction user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/goals" 
+            element={user ? <Goals user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/analytics" 
+            element={user ? <Analytics user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/challenges" 
+            element={user ? <Challenges user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/education" 
+            element={user ? <Education user={user} /> : <Navigate to="/login" />} 
           />
           <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
         </Routes>

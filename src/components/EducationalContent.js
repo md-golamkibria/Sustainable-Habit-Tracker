@@ -97,15 +97,31 @@ const EducationalContent = ({ user }) => {
 
   const handleLike = async (contentId) => {
     try {
-      await axios.post(`/api/educational/${contentId}/like`);
+      const response = await axios.post(`/api/educational/${contentId}/like`);
       setSuccess('Content liked successfully!');
-      // Refresh content to show updated like count
-      if (activeCategory === 'all') {
-        fetchContent();
-      } else {
-        fetchContentByCategory(activeCategory);
-      }
+      
+      // Update the content in state to show updated like count
+      setContent(prevContent => {
+        return prevContent.map(item => {
+          if (item._id === contentId) {
+            // If the response includes a new like count, use it
+            // Otherwise increment by 1 (for mock data)
+            const newLikes = response.data.likes || item.interactions.likes.length + 1;
+            return {
+              ...item,
+              interactions: {
+                ...item.interactions,
+                likes: Array.isArray(item.interactions.likes) 
+                  ? [...item.interactions.likes, 'current-user'] 
+                  : { length: newLikes }
+              }
+            };
+          }
+          return item;
+        });
+      });
     } catch (error) {
+      console.error('Failed to like content:', error);
       setError('Failed to like content');
     }
   };
@@ -135,10 +151,18 @@ const EducationalContent = ({ user }) => {
 
   const openContentModal = async (contentId) => {
     try {
+      setLoading(true);
       const response = await axios.get(`/api/educational/${contentId}`);
-      setSelectedContent(response.data.data);
+      if (response.data && response.data.data) {
+        setSelectedContent(response.data.data);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
-      setError('Failed to load content');
+      console.error('Failed to load content:', error);
+      setError('Failed to load content details. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
