@@ -271,6 +271,10 @@ async function startServer() {
     app.use('/api/notifications', require('./controller/notificationsController'));
     app.use('/api/sharing', require('./controller/sharingController'));
     app.use('/api/educational', require('./controller/educationalController'));
+    // New enhanced features routes
+    app.use('/api/compare', require('./controller/compareController'));
+    app.use('/api/ranking', require('./controller/enhancedRankingController'));
+    app.use('/api/events', require('./controller/enhancedEventsController'));
     // New features routes
     app.use('/api', require('./routes/newFeatures'));
     

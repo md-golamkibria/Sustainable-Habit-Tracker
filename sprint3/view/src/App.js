@@ -16,6 +16,7 @@ import SocialSharing from './components/SocialSharing';
 import EducationalContent from './components/EducationalContent';
 import Rankings from './components/Rankings';
 import Events from './components/Events';
+import NewFeaturesHub from './components/NewFeaturesHub';
 
 // Configure axios defaults
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
@@ -118,6 +119,10 @@ function App() {
             <Route 
               path="/events" 
               element={user ? <Events user={user} /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/more" 
+              element={user ? <NewFeaturesHub user={user} /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/" 

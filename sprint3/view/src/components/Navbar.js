@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Leaf, Home, Activity, BarChart3, Trophy, Target, Share2, LogOut, Menu, X, BookOpen, Medal, Calendar } from 'lucide-react';
+import { Leaf, Home, Activity, BarChart3, Trophy, Target, Share2, LogOut, Menu, X, BookOpen, Medal, Calendar, Star } from 'lucide-react';
 
 const Navbar = ({ user, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +21,7 @@ const Navbar = ({ user, onLogout }) => {
     { name: 'Rankings', href: '/rankings', icon: Medal },
     { name: 'Education', href: '/education', icon: BookOpen },
     { name: 'Events', href: '/events', icon: Calendar },
+    { name: 'More', href: '/more', icon: Star },
     { name: 'Share', href: '/social-sharing', icon: Share2 },
   ];
 
@@ -43,7 +44,7 @@ const Navbar = ({ user, onLogout }) => {
         {/* Center - Navigation Links (hidden on mobile) */}
         <div className="navbar-center hidden md:flex">
           {navigation.filter(item => 
-            ['Dashboard', 'Actions', 'Analytics', 'Challenges', 'Goals', 'Share'].includes(item.name)
+            ['Dashboard', 'Actions', 'Analytics', 'Challenges', 'Goals', 'Share', 'More'].includes(item.name)
           ).map((item) => {
             const Icon = item.icon;
             return (
