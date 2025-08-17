@@ -26,7 +26,7 @@ const Challenges = ({ user }) => {
   const [userChallenges, setUserChallenges] = useState([]);
   const [createdChallenges, setCreatedChallenges] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [activeTab, setActiveTab] = useState('available');
+  const [activeTab, setActiveTab] = useState('my-challenges');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -109,8 +109,29 @@ const Challenges = ({ user }) => {
 
   const fetchUserChallenges = async () => {
     try {
-      const response = await axios.get('/api/challenges/my-challenges');
-      setUserChallenges(response.data.active || []);
+      // Fetch user's joined challenges
+      const myResponse = await axios.get('/api/challenges/my-challenges');
+      const joinedChallenges = myResponse.data.active || [];
+
+      // Fetch available public challenges from other users
+      const publicResponse = await axios.get('/api/challenges');
+      const publicChallenges = publicResponse.data || [];
+
+      // Combine joined challenges and available public challenges
+      const allChallenges = [
+        ...joinedChallenges.map(challenge => ({
+          ...challenge,
+          challengeType: 'joined',
+          userParticipating: true
+        })),
+        ...publicChallenges.map(challenge => ({
+          ...challenge,
+          challengeType: 'available',
+          userParticipating: false
+        }))
+      ];
+
+      setUserChallenges(allChallenges);
     } catch (error) {
       console.error('Error fetching user challenges:', error);
       setUserChallenges([]);
@@ -167,7 +188,7 @@ const Challenges = ({ user }) => {
     setSelectedTemplate(null);
   };
 
-  const useTemplate = (template) => {
+  const applyTemplate = (template) => {
     setFormData({
       title: template.title,
       description: template.description,
@@ -218,16 +239,26 @@ const Challenges = ({ user }) => {
   };
 
   const deleteChallenge = async (challengeId) => {
-    if (!window.confirm('Are you sure you want to delete this challenge?')) return;
+    // Find the challenge to get participant count
+    const challenge = createdChallenges.find(c => c._id === challengeId);
+    const participantCount = challenge?.participants?.length || 0;
+    
+    let confirmMessage = 'Are you sure you want to delete this challenge?';
+    if (participantCount > 0) {
+      confirmMessage = `This challenge has ${participantCount} active participant${participantCount > 1 ? 's' : ''}. Deleting it will remove it from their active challenges. Are you sure you want to continue?`;
+    }
+    
+    if (!window.confirm(confirmMessage)) return;
     
     try {
-      await axios.delete(`/api/challenges/${challengeId}`);
-      setMessage('✅ Challenge deleted successfully!');
+      const response = await axios.delete(`/api/challenges/${challengeId}`);
+      setMessage(`✅ ${response.data.message}`);
       await fetchCreatedChallenges();
-      setTimeout(() => setMessage(''), 3000);
+      await fetchUserChallenges(); // Refresh in case user was participating in their own challenge
+      setTimeout(() => setMessage(''), 4000);
     } catch (error) {
       setMessage('❌ Error deleting challenge: ' + (error.response?.data?.message || 'Unknown error'));
-      setTimeout(() => setMessage(''), 3000);
+      setTimeout(() => setMessage(''), 4000);
     }
   };
 
@@ -298,7 +329,7 @@ const Challenges = ({ user }) => {
                       ? 'border-green-500 bg-green-50'
                       : 'border-gray-200 hover:border-green-300'
                   }`}
-                  onClick={() => useTemplate(template)}
+                  onClick={() => applyTemplate(template)}
                 >
                   <h4 className="font-medium text-sm text-gray-900">{template.title}</h4>
                   <p className="text-xs text-gray-600 mt-1">{template.description}</p>
@@ -533,7 +564,6 @@ const Challenges = ({ user }) => {
               {/* Sub-navigation as filter buttons */}
               <div className="flex flex-wrap gap-3">
                 {[
-                  { id: 'available', label: 'Available Challenges', icon: Trophy, count: challenges.length },
                   { id: 'my-challenges', label: 'My Challenges', icon: Award, count: userChallenges.length },
                   { id: 'created', label: 'My Created', icon: Star, count: createdChallenges.length }
                 ].map(tab => {
@@ -594,94 +624,6 @@ const Challenges = ({ user }) => {
 
 
         {/* Tab Content */}
-        {activeTab === 'available' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {challenges.length > 0 ? (
-              challenges.map(challenge => {
-                const colorClass = getChallengeTypeColor(challenge.type);
-                const participating = isUserParticipating(challenge._id);
-                
-                return (
-                  <div key={challenge._id} className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <Trophy className={`h-5 w-5 text-${colorClass}-500 mr-2`} />
-                          <span className={`px-2 py-1 text-xs font-medium bg-${colorClass}-100 text-${colorClass}-800 rounded-full`}>
-                            {challenge.type}
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          {challenge.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-4">
-                          {challenge.description}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Users className="h-4 w-4 mr-2" />
-                        <span>{challenge.participants?.length || 0} participants</span>
-                      </div>
-                      
-                      {challenge.duration?.endDate && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          <span>Ends {formatDate(challenge.duration.endDate)}</span>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Target className="h-4 w-4 mr-2" />
-                        <span>{challenge.target?.value} {challenge.target?.unit}</span>
-                      </div>
-                      
-                      {challenge.reward?.points && (
-                        <div className="flex items-center text-sm text-green-600">
-                          <Zap className="h-4 w-4 mr-2" />
-                          <span>{challenge.reward.points} points</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <button
-                      onClick={() => joinChallenge(challenge._id)}
-                      disabled={participating || !challenge.duration?.isActive}
-                      className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
-                        participating 
-                          ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                          : challenge.duration?.isActive
-                            ? `bg-${colorClass}-500 text-white hover:bg-${colorClass}-600`
-                            : 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
-                      {participating ? 'Already Joined' : challenge.duration?.isActive ? 'Join Challenge' : 'Challenge Ended'}
-                    </button>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="col-span-full">
-                <div className="bg-white shadow rounded-lg p-12 text-center">
-                  <Trophy className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No challenges available</h3>
-                  <p className="text-gray-500 mb-4">
-                    Check back later for new sustainability challenges!
-                  </p>
-                  <button
-                    onClick={() => setShowCreateForm(true)}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    Create Your Own Challenge
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === 'my-challenges' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userChallenges.length > 0 ? (
@@ -692,36 +634,81 @@ const Challenges = ({ user }) => {
                   : 0;
                 
                 return (
-                  <div key={challenge._id} className="bg-white shadow rounded-lg p-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
+                  <div key={challenge._id} className={`bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow ${
+                    challenge.challengeType === 'joined' 
+                      ? 'border-l-4 border-green-500' 
+                      : 'border-l-4 border-blue-500'
+                  }`}>
                     <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{challenge.title}</h3>
-                        <span className={`inline-block px-2 py-1 text-xs font-medium bg-${colorClass}-100 text-${colorClass}-800 rounded-full mt-1`}>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="font-semibold text-gray-900">{challenge.title}</h3>
+                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                            challenge.challengeType === 'joined'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {challenge.challengeType === 'joined' ? '✅ Joined' : '🔍 Available'}
+                          </span>
+                        </div>
+                        <span className={`inline-block px-2 py-1 text-xs font-medium bg-${colorClass}-100 text-${colorClass}-800 rounded-full`}>
                           {challenge.type}
                         </span>
                       </div>
-                      <Award className="h-5 w-5 text-green-500" />
+                      {challenge.challengeType === 'available' && (
+                        <button
+                          onClick={() => joinChallenge(challenge._id)}
+                          className="bg-green-600 text-white px-3 py-1 text-sm rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Join
+                        </button>
+                      )}
+                      {challenge.challengeType === 'joined' && (
+                        <Award className="h-5 w-5 text-green-500" />
+                      )}
                     </div>
                     
                     <p className="text-sm text-gray-600 mb-3">{challenge.description}</p>
                     
-                    <div className="mb-3">
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>Progress</span>
-                        <span>{challenge.userProgress || 0} / {challenge.target?.value}</span>
+                    {challenge.challengeType === 'joined' && (
+                      <div className="mb-3">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>Progress</span>
+                          <span>{challenge.userProgress || 0} / {challenge.target?.value}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                        <div className="text-right text-xs text-gray-500 mt-1">
+                          {Math.round(progress)}% complete
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${progress}%` }}
-                        ></div>
-                      </div>
-                      <div className="text-right text-xs text-gray-500 mt-1">
-                        {Math.round(progress)}% complete
-                      </div>
-                    </div>
+                    )}
                     
-                    {challenge.daysRemaining !== null && (
+                    {challenge.challengeType === 'available' && (
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Users className="h-4 w-4 mr-2" />
+                          <span>{challenge.participants?.length || 0} participants</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Target className="h-4 w-4 mr-2" />
+                          <span>{challenge.target?.value} {challenge.target?.unit}</span>
+                        </div>
+                        {challenge.reward?.points && (
+                          <div className="flex items-center text-sm text-green-600">
+                            <Award className="h-4 w-4 mr-2" />
+                            <span>{challenge.reward.points} points</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {challenge.daysRemaining !== null && challenge.challengeType === 'joined' && (
                       <div className="flex items-center text-xs text-gray-500">
                         <Timer className="h-3 w-3 mr-1" />
                         {challenge.daysRemaining > 0 ? `${challenge.daysRemaining} days left` : 'Ending soon'}
@@ -734,15 +721,15 @@ const Challenges = ({ user }) => {
               <div className="col-span-full">
                 <div className="bg-white shadow rounded-lg p-12 text-center">
                   <Award className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No active challenges</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No challenges yet</h3>
                   <p className="text-gray-500 mb-4">
-                    Join some challenges to start your sustainability journey!
+                    Create a public challenge or join challenges from other users!
                   </p>
                   <button
-                    onClick={() => setActiveTab('available')}
+                    onClick={() => setShowCreateForm(true)}
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    Browse Challenges
+                    Create Challenge
                   </button>
                 </div>
               </div>
@@ -765,9 +752,16 @@ const Challenges = ({ user }) => {
                           <span className={`inline-block px-2 py-1 text-xs font-medium bg-${colorClass}-100 text-${colorClass}-800 rounded-full`}>
                             {challenge.type}
                           </span>
-                          {challenge.isGlobal && (
-                            <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                              Public
+                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                            challenge.isGlobal 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {challenge.isGlobal ? '🌐 Public' : '🔒 Private'}
+                          </span>
+                          {challenge.participants && challenge.participants.length > 0 && (
+                            <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                              👥 {challenge.participants.length} participant{challenge.participants.length > 1 ? 's' : ''}
                             </span>
                           )}
                         </div>
@@ -775,7 +769,16 @@ const Challenges = ({ user }) => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => deleteChallenge(challenge._id)}
-                          className="text-red-500 hover:text-red-700"
+                          className={`p-2 rounded-lg transition-colors ${
+                            challenge.participants && challenge.participants.length > 0
+                              ? 'text-red-600 hover:text-red-800 hover:bg-red-50 border border-red-200'
+                              : 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                          }`}
+                          title={
+                            challenge.participants && challenge.participants.length > 0
+                              ? `Delete challenge (${challenge.participants.length} participants will be removed)`
+                              : 'Delete challenge'
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -796,27 +799,35 @@ const Challenges = ({ user }) => {
                       </div>
                       
                       {challenge.completionRate !== undefined && (
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-sm text-green-600">
                           <CheckCircle className="h-4 w-4 mr-2" />
                           <span>{challenge.completionRate}% completion rate</span>
                         </div>
                       )}
                       
-                      {challenge.daysRemaining !== null && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Clock className="h-4 w-4 mr-2" />
-                          {challenge.daysRemaining > 0 ? `${challenge.daysRemaining} days left` : 'Ended'}
+                      {challenge.reward?.points && (
+                        <div className="flex items-center text-sm text-yellow-600">
+                          <Award className="h-4 w-4 mr-2" />
+                          <span>{challenge.reward.points} points reward</span>
                         </div>
                       )}
                     </div>
                     
-                    <div className={`text-xs px-2 py-1 rounded-full inline-block ${
-                      challenge.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {challenge.isActive ? 'Active' : 'Inactive'}
-                    </div>
+                    {challenge.isGlobal && (
+                      <div className="mt-3 p-2 bg-green-50 rounded-lg">
+                        <p className="text-xs text-green-700">
+                          ✨ This public challenge is visible to all users and they can join it
+                        </p>
+                      </div>
+                    )}
+                    
+                    {!challenge.isGlobal && (
+                      <div className="mt-3 p-2 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600">
+                          🔒 This private challenge is only visible to you
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -826,7 +837,7 @@ const Challenges = ({ user }) => {
                   <Star className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No challenges created yet</h3>
                   <p className="text-gray-500 mb-4">
-                    Create your first custom challenge and inspire others!
+                    Create your first challenge to start building your sustainability impact!
                   </p>
                   <button
                     onClick={() => setShowCreateForm(true)}

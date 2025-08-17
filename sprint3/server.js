@@ -275,6 +275,8 @@ async function startServer() {
     app.use('/api/compare', require('./controller/compareController'));
     app.use('/api/ranking', require('./controller/enhancedRankingController'));
     app.use('/api/events', require('./controller/enhancedEventsController'));
+    // Custom challenges route
+    app.use('/api/custom-challenges', require('./controller/customChallengesController'));
     // New features routes
     app.use('/api', require('./routes/newFeatures'));
     

@@ -1,0 +1,27 @@
+{{ ... }}
+.no-challenges h3 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.no-challenges-note {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f0f8f0;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.no-challenges-note small {
+  color: #2d5a2d;
+  font-size: 13px;
+  line-height: 1.4;
+  display: block;
+}
+
+.challenges-grid {
+{{ ... }}

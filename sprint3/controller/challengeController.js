@@ -27,63 +27,13 @@ router.get('/', requireAuth, async (req, res) => {
 
     const challenges = await Challenge.find({
       'duration.isActive': true,
+      createdBy: { $exists: true, $ne: userId, $ne: 'system', $ne: null, $ne: '' },
+      isGlobal: true,
       $or: [
         { 'duration.endDate': { $exists: false } },
         { 'duration.endDate': { $gte: new Date() } }
       ]
-    }).sort({ createdAt: -1 });
-
-    // If no challenges in database, return mock data
-    if (!challenges || challenges.length === 0) {
-      const mockChallenges = [
-        {
-          _id: 'challenge1',
-          title: 'Daily Energy Saver',
-          description: 'Save energy by turning off lights and unplugging devices when not in use.',
-          type: 'daily',
-          category: 'energy_saving',
-          target: { value: 10, unit: 'actions' },
-          reward: { points: 50 },
-          duration: { isActive: true, endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-          participants: [],
-          userParticipating: false,
-          userProgress: 0,
-          userCompleted: false,
-          meetsRequirements: true
-        },
-        {
-          _id: 'challenge2',
-          title: 'Weekly Water Conservation',
-          description: 'Reduce water usage by taking shorter showers and fixing leaks.',
-          type: 'weekly',
-          category: 'water_conservation',
-          target: { value: 5, unit: 'days' },
-          reward: { points: 100 },
-          duration: { isActive: true, endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
-          participants: [],
-          userParticipating: false,
-          userProgress: 0,
-          userCompleted: false,
-          meetsRequirements: true
-        },
-        {
-          _id: 'challenge3',
-          title: 'Zero Waste Week',
-          description: 'Minimize waste by using reusable items and composting organic waste.',
-          type: 'weekly',
-          category: 'waste_reduction',
-          target: { value: 7, unit: 'days' },
-          reward: { points: 150 },
-          duration: { isActive: true, endDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) },
-          participants: [],
-          userParticipating: false,
-          userProgress: 0,
-          userCompleted: false,
-          meetsRequirements: true
-        }
-      ];
-      return res.json(mockChallenges);
-    }
+    }).populate('createdBy', 'username').sort({ createdAt: -1 });
 
     // Filter challenges based on user requirements and add participation status
     const availableChallenges = challenges.map(challenge => {
@@ -139,63 +89,13 @@ router.get('/available', requireAuth, async (req, res) => {
 
     const challenges = await Challenge.find({
       'duration.isActive': true,
+      createdBy: { $exists: true, $ne: userId, $ne: 'system', $ne: null, $ne: '' },
+      isGlobal: true,
       $or: [
         { 'duration.endDate': { $exists: false } },
         { 'duration.endDate': { $gte: new Date() } }
       ]
-    }).sort({ createdAt: -1 });
-
-    // If no challenges in database, return mock data
-    if (!challenges || challenges.length === 0) {
-      const mockChallenges = [
-        {
-          _id: 'challenge1',
-          title: 'Daily Energy Saver',
-          description: 'Save energy by turning off lights and unplugging devices when not in use.',
-          type: 'daily',
-          category: 'energy_saving',
-          target: { value: 10, unit: 'actions' },
-          reward: { points: 50 },
-          duration: { isActive: true, endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-          participants: [],
-          userParticipating: false,
-          userProgress: 0,
-          userCompleted: false,
-          meetsRequirements: true
-        },
-        {
-          _id: 'challenge2',
-          title: 'Weekly Water Conservation',
-          description: 'Reduce water usage by taking shorter showers and fixing leaks.',
-          type: 'weekly',
-          category: 'water_conservation',
-          target: { value: 5, unit: 'days' },
-          reward: { points: 100 },
-          duration: { isActive: true, endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
-          participants: [],
-          userParticipating: false,
-          userProgress: 0,
-          userCompleted: false,
-          meetsRequirements: true
-        },
-        {
-          _id: 'challenge3',
-          title: 'Zero Waste Week',
-          description: 'Minimize waste by using reusable items and composting organic waste.',
-          type: 'weekly',
-          category: 'waste_reduction',
-          target: { value: 7, unit: 'days' },
-          reward: { points: 150 },
-          duration: { isActive: true, endDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) },
-          participants: [],
-          userParticipating: false,
-          userProgress: 0,
-          userCompleted: false,
-          meetsRequirements: true
-        }
-      ];
-      return res.json(mockChallenges);
-    }
+    }).populate('createdBy', 'username').sort({ createdAt: -1 });
 
     // Filter challenges based on user requirements and add participation status
     const availableChallenges = challenges.map(challenge => {
@@ -740,7 +640,7 @@ router.get('/templates', requireAuth, async (req, res) => {
   }
 });
 
-// Delete a user's created challenge (only if no participants)
+// Delete a user's created challenge (creators can delete even with participants)
 router.delete('/:challengeId', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -757,18 +657,36 @@ router.delete('/:challengeId', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this challenge' });
     }
 
-    // Check if challenge has participants
+    // If challenge has participants, clean up their references
     if (challenge.participants && challenge.participants.length > 0) {
-      return res.status(400).json({ message: 'Cannot delete challenge with active participants' });
+      const participantIds = challenge.participants.map(p => p.userId);
+      
+      // Remove challenge from all participants' active challenges
+      await User.updateMany(
+        { _id: { $in: participantIds } },
+        { 
+          $pull: { 
+            'challenges.active': { challengeId: challengeId }
+          }
+        }
+      );
+      
+      console.log(`Cleaned up challenge ${challengeId} from ${participantIds.length} participants`);
     }
 
+    // Delete the challenge
     await Challenge.findByIdAndDelete(challengeId);
 
-    res.json({ message: 'Challenge deleted successfully' });
+    const participantCount = challenge.participants ? challenge.participants.length : 0;
+    const message = participantCount > 0 
+      ? `Challenge deleted successfully. Removed from ${participantCount} participants.`
+      : 'Challenge deleted successfully';
+
+    res.json({ message });
 
   } catch (error) {
-    console.error('Delete challenge error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Error deleting challenge:', error);
+    res.status(500).json({ message: 'Error deleting challenge' });
   }
 });
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CompareResults from './CompareResults';
 import EnhancedRanking from './EnhancedRanking';
 import EnhancedEvents from './EnhancedEvents';
+import EducationalContent from './EducationalContent';
 import './NewFeaturesHub.css';
 
 const NewFeaturesHub = ({ user }) => {
@@ -28,6 +29,13 @@ const NewFeaturesHub = ({ user }) => {
       icon: '🌍',
       description: 'Discover nature and personal development events near you',
       component: EnhancedEvents
+    },
+    {
+      id: 'education',
+      name: 'Educational Content',
+      icon: '📚',
+      description: 'Learn with tips, guides, and articles on sustainable living',
+      component: EducationalContent
     }
   ];
 

@@ -3,12 +3,12 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // Import models
-const User = require('./models/User');
-const Notification = require('./models/Notification');
-const Reward = require('./models/Reward');
-const Community = require('./models/Community');
-const Post = require('./models/Post');
-const Challenge = require('./models/Challenge');
+const User = require('./model/User');
+const Notification = require('./model/Notification');
+const Reward = require('./model/Reward');
+const Community = require('./model/Community');
+const Post = require('./model/Post');
+const Challenge = require('./model/Challenge');
 
 const MONGODB_URI = 'mongodb://localhost:27017/sustainable_habit_tracker_sprint3';
 
@@ -244,20 +244,20 @@ async function seedDatabase() {
 
     console.log(`Created ${posts.length} posts`);
 
-    // Create challenges
+    // Create challenges created by users
     const challenges = await Challenge.create([
       {
         title: 'Plastic-Free Week',
-        description: 'Avoid single-use plastics for 7 consecutive days',
+        description: 'Avoid using single-use plastics for an entire week',
         type: 'weekly',
-        category: 'general',
+        category: 'waste_reduction',
         target: {
           value: 7,
           unit: 'days',
           description: 'Days without using single-use plastics'
         },
         reward: {
-          points: 500,
+          points: 100,
           badge: {
             name: 'Plastic-Free Pioneer',
             icon: '♻️',
@@ -270,9 +270,46 @@ async function seedDatabase() {
           endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           isActive: true
         },
+        createdBy: users[0]._id,
+        isGlobal: true,
         participants: [
-          { userId: users[0]._id.toString(), progress: 3 },
-          { userId: users[2]._id.toString(), progress: 1 }
+          { userId: users[2]._id, joinedAt: new Date(), progress: 1, completed: false }
+        ],
+        stats: {
+          totalParticipants: 1,
+          completedCount: 0,
+          completionRate: 0
+        }
+      },
+      {
+        title: 'Daily Bike Commute',
+        description: 'Bike to work or school every day this week',
+        type: 'daily',
+        category: 'biking',
+        target: {
+          value: 5,
+          unit: 'days',
+          description: 'Days of biking to work/school'
+        },
+        reward: {
+          points: 75,
+          badge: {
+            name: 'Bike Commuter',
+            icon: '🚴',
+            description: 'Dedicated bike commuter'
+          }
+        },
+        difficulty: 'easy',
+        duration: {
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          isActive: true
+        },
+        createdBy: users[1]._id,
+        isGlobal: true,
+        participants: [
+          { userId: users[0]._id, joinedAt: new Date(), progress: 2, completed: false },
+          { userId: users[3]._id, joinedAt: new Date(), progress: 1, completed: false }
         ],
         stats: {
           totalParticipants: 2,
@@ -281,21 +318,21 @@ async function seedDatabase() {
         }
       },
       {
-        title: 'Green Commute Challenge',
-        description: 'Use sustainable transportation (bike, walk, public transport) for all trips this month',
+        title: 'Zero Food Waste Month',
+        description: 'Complete a month without wasting any food',
         type: 'monthly',
-        category: 'public_transport',
+        category: 'waste_reduction',
         target: {
           value: 30,
-          unit: 'trips',
-          description: 'Sustainable transportation trips'
+          unit: 'days',
+          description: 'Days with zero food waste'
         },
         reward: {
-          points: 1000,
+          points: 250,
           badge: {
-            name: 'Eco Commuter',
-            icon: '🚌',
-            description: 'Master of sustainable transportation'
+            name: 'Zero Waste Champion',
+            icon: '🥬',
+            description: 'Master of food conservation'
           }
         },
         difficulty: 'hard',
@@ -304,13 +341,44 @@ async function seedDatabase() {
           endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           isActive: true
         },
-        participants: [
-          { userId: users[0]._id.toString(), progress: 15 },
-          { userId: users[1]._id.toString(), progress: 22 },
-          { userId: users[3]._id.toString(), progress: 8 }
-        ],
+        createdBy: users[2]._id,
+        isGlobal: true,
+        participants: [],
         stats: {
-          totalParticipants: 3,
+          totalParticipants: 0,
+          completedCount: 0,
+          completionRate: 0
+        }
+      },
+      {
+        title: 'Water Conservation Challenge',
+        description: 'Reduce water usage by taking shorter showers and fixing leaks',
+        type: 'weekly',
+        category: 'water_conservation',
+        target: {
+          value: 7,
+          unit: 'days',
+          description: 'Days of conscious water conservation'
+        },
+        reward: {
+          points: 120,
+          badge: {
+            name: 'Water Guardian',
+            icon: '💧',
+            description: 'Protector of our water resources'
+          }
+        },
+        difficulty: 'medium',
+        duration: {
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          isActive: true
+        },
+        createdBy: users[3]._id,
+        isGlobal: true,
+        participants: [],
+        stats: {
+          totalParticipants: 0,
           completedCount: 0,
           completionRate: 0
         }
@@ -318,6 +386,42 @@ async function seedDatabase() {
     ]);
 
     console.log(`Created ${challenges.length} challenges`);
+
+    // Update users' active challenges to match the new challenges
+    users[2].challenges = {
+      active: [{
+        challengeId: challenges[0]._id,
+        joinedAt: new Date(),
+        progress: 1,
+        completed: false
+      }]
+    };
+
+    users[0].challenges = {
+      active: [{
+        challengeId: challenges[1]._id,
+        joinedAt: new Date(),
+        progress: 2,
+        completed: false
+      }]
+    };
+
+    users[3].challenges = {
+      active: [{
+        challengeId: challenges[1]._id,
+        joinedAt: new Date(),
+        progress: 1,
+        completed: false
+      }]
+    };
+
+    await Promise.all([
+      users[0].save(),
+      users[2].save(),
+      users[3].save()
+    ]);
+
+    console.log('Updated user challenge participation');
 
     // Create notifications
     const notifications = await Notification.create([
